@@ -1,0 +1,11 @@
+{
+  "include": [ "src", "index.js" ],
+  "compilerOptions": {
+    "strict": true,
+    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "outDir": "out",
+    "skipLibCheck": true,
+    "target": "ESNext"
+  }
+}
