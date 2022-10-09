@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import * as c from 'canvas';
 import * as fs from "fs/promises";
 import * as path from "path";
@@ -5,21 +8,32 @@ import colors from 'get-image-colors';
 
 const log = console.log;
 const IMAGE_SIZE_IN_COLLAGE = 40;
+const MIXING_LIMIT = 4;
+const RANDOM_MAX_MIXING_DISTANCE = 4;
 
 (async () => {
   const { default: chalk } = await import("chalk");
+
+
+  function randomNumber( min: number, max: number ) {
+    return Math.floor( Math.random() * (max - min) + min );
+  }
   
   function show(text: string) {
     log(chalk.blue(text));
   }
 
   const [, , inputImagePath, inputDirectory] = process.argv;
+  const hasMixImagesFlag = process.argv.some( s => s === '--mix' );
+  const hasRandomMixingFlag = process.argv.some( s => s === '--random-mix' );
 
   show("Received:");
   show(
     `'${inputImagePath}' -> Image that will be recreated with the files from input directory`
   );
   show(`'${inputDirectory}' -> Directory with files that will make a collage`);
+  show(`Has mixing images flag: ${hasMixImagesFlag}`);
+  show(`Has random mixing images flag: ${hasRandomMixingFlag}`);
 
   show("Reading image input...");
   const img = await c.loadImage(inputImagePath);
@@ -64,11 +78,13 @@ const IMAGE_SIZE_IN_COLLAGE = 40;
   const ctxOutput = canvasOutput.getContext("2d");
 
   console.log(`progress: 0/${width}`);
+  let lastImages: string[] = [];
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
       const { data } = ctxInput.getImageData(x, y, 1, 1);
       const [r, g, b] = data;
 
+      const currentLastImages = lastImages.slice(lastImages.length - MIXING_LIMIT, lastImages.length - 1);
       const imgs = images.sort(
         (a, second) =>
           - (
@@ -79,13 +95,16 @@ const IMAGE_SIZE_IN_COLLAGE = 40;
           Math.abs(second.dominantColour.r - r) +
           Math.abs(second.dominantColour.g - g) +
           Math.abs(second.dominantColour.b - b)
-      );
+      )
+      .reverse()
+      .filter( img => !currentLastImages.some( i => i === img.fileName ) )
      
-      const closest = imgs[imgs.length - 1];
+      const closest = imgs[(hasRandomMixingFlag ? randomNumber(0, RANDOM_MAX_MIXING_DISTANCE) : 0)];
       const {fileName} = closest;
       const image = await c.loadImage(path.join(inputDirectory, fileName));
 
       ctxOutput.drawImage(image, x * IMAGE_SIZE_IN_COLLAGE, y * IMAGE_SIZE_IN_COLLAGE, IMAGE_SIZE_IN_COLLAGE, IMAGE_SIZE_IN_COLLAGE);
+      if (hasMixImagesFlag) lastImages.push(fileName);
     }
     console.log(`progress: ${x}/${width}`);
   }
