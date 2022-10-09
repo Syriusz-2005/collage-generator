@@ -7,9 +7,9 @@ import * as path from "path";
 import colors from 'get-image-colors';
 
 const log = console.log;
-const IMAGE_SIZE_IN_COLLAGE = 40;
-const MIXING_LIMIT = 4;
-const RANDOM_MAX_MIXING_DISTANCE = 4;
+const IMAGE_SIZE_IN_COLLAGE = Number(process.env.IMAGE_SIZE_IN_COLLAGE ?? 40);
+const MIXING_LIMIT = Number(process.env.MIXING_LIMIT ?? 4);
+const RANDOM_MAX_MIXING_DISTANCE = Number(process.env.RANDOM_MAX_MIXING_DISTANCE ?? 3);
 
 (async () => {
   const { default: chalk } = await import("chalk");
